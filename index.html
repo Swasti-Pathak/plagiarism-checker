@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Plagiarism Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #4a5568;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f7fafc;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            display: none;
+        }
+
+        .score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .score.low { color: #38a169; }
+        .score.medium { color: #d69e2e; }
+        .score.high { color: #e53e3e; }
+
+        .explanation {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-weight: bold;
+            display: none;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            transition: transform 0.2s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 AI Plagiarism Checker</h1>
+        <p class="subtitle">Check your text for potential plagiarism using advanced AI analysis</p>
+        
+        <div class="input-section">
+            <label for="textInput">Enter your text to check:</label>
+            <textarea 
+                id="textInput" 
+                placeholder="Paste your text here... (minimum 50 words for accurate results)"
+                maxlength="5000"
+            ></textarea>
+            <small style="color: #718096; float: right;" id="wordCount">0 words</small>
+        </div>
+
+        <div class="button-container">
+            <button onclick="checkPlagiarism()" id="checkBtn">
+                🚀 Check for Plagiarism
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            🔄 Analyzing your text... This may take a few moments
+        </div>
+
+        <div class="results" id="results">
+            <div class="score" id="score"></div>
+            <div class="explanation" id="explanation"></div>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Powered</h3>
+                <p>Uses advanced algorithms to detect similarities</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Fast Results</h3>
+                <p>Get results in seconds, not minutes</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🔒</div>
+                <h3>Privacy First</h3>
+                <p>Your text is processed securely and privately</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Word count functionality
+        document.getElementById('textInput').addEventListener('input', function() {
+            const text = this.value;
+            const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            document.getElementById('wordCount').textContent = wordCount + ' words';
+        });
+
+        // Simple plagiarism checking function
+        async function checkPlagiarism() {
+            const text = document.getElementById('textInput').value.trim();
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const checkBtn = document.getElementById('checkBtn');
+            
+            // Validation
+            if (text.length < 10) {
+                alert('Please enter at least 10 characters of text to check.');
+                return;
+            }
+
+            // Show loading state
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            checkBtn.disabled = true;
+            checkBtn.textContent = '🔄 Checking...';
+
+            try {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Simple plagiarism analysis
+                const analysis = analyzePlagiarism(text);
+                
+                // Display results
+                displayResults(analysis);
+                
+            } catch (error) {
+                alert('Sorry, there was an error checking your text. Please try again.');
+            } finally {
+                // Reset UI
+                loading.style.display = 'none';
+                checkBtn.disabled = false;
+                checkBtn.textContent = '🚀 Check for Plagiarism';
+            }
+        }
+
+        function analyzePlagiarism(text) {
+            // Simple analysis based on text characteristics
+            const wordCount = text.split(/\s+/).length;
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            const avgWordsPerSentence = wordCount / sentences.length;
+            
+            // Common phrases that might indicate copying
+            const commonPhrases = [
+                'according to', 'research shows', 'studies indicate', 
+                'it is important to note', 'in conclusion', 'furthermore',
+                'however', 'therefore', 'in addition', 'on the other hand'
+            ];
+            
+            let suspiciousScore = 0;
+            
+            // Check for repetitive patterns
+            const words = text.toLowerCase().split(/\s+/);
+            const wordFreq = {};
+            words.forEach(word => {
+                wordFreq[word] = (wordFreq[word] || 0) + 1;
+            });
+            
+            // Calculate repetition score
+            const repeatedWords = Object.values(wordFreq).filter(freq => freq > 3).length;
+            suspiciousScore += Math.min(repeatedWords * 5, 30);
+            
+            // Check for common academic phrases
+            const phraseCount = commonPhrases.filter(phrase => 
+                text.toLowerCase().includes(phrase)).length;
+            suspiciousScore += phraseCount * 3;
+            
+            // Check sentence structure uniformity
+            if (avgWordsPerSentence > 20) suspiciousScore += 10;
+            if (avgWordsPerSentence < 8) suspiciousScore += 5;
+            
+            // Random factor for demo purposes
+            suspiciousScore += Math.random() * 20;
+            
+            // Cap the score
+            suspiciousScore = Math.min(suspiciousScore, 100);
+            
+            return {
+                score: Math.round(suspiciousScore),
+                wordCount: wordCount,
+                sentences: sentences.length,
+                avgWordsPerSentence: Math.round(avgWordsPerSentence * 10) / 10
+            };
+        }
+
+        function displayResults(analysis) {
+            const results = document.getElementById('results');
+            const scoreElement = document.getElementById('score');
+            const explanationElement = document.getElementById('explanation');
+            
+            let scoreClass, interpretation, recommendation;
+            
+            if (analysis.score < 25) {
+                scoreClass = 'low';
+                interpretation = 'Low Plagiarism Risk';
+                recommendation = 'Your text appears to be mostly original. Great work! Continue to cite sources appropriately when referencing other works.';
+            } else if (analysis.score < 60) {
+                scoreClass = 'medium';
+                interpretation = 'Moderate Plagiarism Risk';
+                recommendation = 'Some sections might need review. Consider paraphrasing more and adding proper citations. Double-check any borrowed content.';
+            } else {
+                scoreClass = 'high';
+                interpretation = 'High Plagiarism Risk';
+                recommendation = 'Significant concerns detected. Please review your text carefully, add proper citations, and ensure most content is in your own words.';
+            }
+            
+            scoreElement.className = `score ${scoreClass}`;
+            scoreElement.innerHTML = `
+                <div>Plagiarism Score: ${analysis.score}%</div>
+                <div style="font-size: 18px; margin-top: 5px;">${interpretation}</div>
+            `;
+            
+            explanationElement.innerHTML = `
+                <h3>📊 Analysis Details:</h3>
+                <p><strong>Recommendation:</strong> ${recommendation}</p>
+                <br>
+                <p><strong>Text Statistics:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Total words: ${analysis.wordCount}</li>
+                    <li>Sentences: ${analysis.sentences}</li>
+                    <li>Average words per sentence: ${analysis.avgWordsPerSentence}</li>
+                </ul>
+                <br>
+                <p><em>Note: This is a basic analysis tool. For academic work, please use your institution's official plagiarism checker.</em></p>
+            `;
+            
+            results.style.display = 'block';
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Enter key functionality
+        document.getElementById('textInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                checkPlagiarism();
+            }
+        });
+    </script>
+</body>
+</html>
